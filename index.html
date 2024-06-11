@@ -1,5 +1,5 @@
-<img id="invader" src="invader.png" style="display: none;">
-<img id="cannon" src="cannon.png" style="display: none;">
+<img id="invader" src="imperio.png" style="display: none;">
+<img id="cannon" src="xwing.png" style="display: none;">
 <canvas id="canvas" width="500" height="600">
 <script>
   var interval
@@ -29,7 +29,7 @@
     return this.y > 0 && this.y < 600
   }
   Shot.prototype.draw = function(ctx) {
-    ctx.fillStyle = '#000'
+    ctx.fillStyle = '#fff'
     ctx.fillRect(this.x-1, this.y, 3, 20)
   }
   var invaderDx = -5
@@ -47,7 +47,7 @@
   }
 
   function draw() {
-    ctx.fillStyle = '#ddd'
+    ctx.fillStyle = '#000'
     ctx.fillRect(0, 0, 500, 600)
     invaders.forEach(inv => inv.draw(ctx))
     cannon.draw(ctx)
