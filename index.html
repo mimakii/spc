@@ -26,11 +26,11 @@
   }
   Shot.prototype.move = function() {
     this.y += this.dy
-    return this.y > 0 && this.y < 600
+    return this.y > 0 && this.y < 5000
   }
   Shot.prototype.draw = function(ctx) {
     ctx.fillStyle = '#FF0000'
-    ctx.fillRect(this.x-1, this.y, 3, 20)
+    ctx.fillRect(this.x-1, this.y, 4, 20)
   }
   var invaderDx = -5
   var invaders = []
