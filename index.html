@@ -1,107 +1,249 @@
-<img id="invader" src="imperio.png" style="display: none;">
-<img id="cannon" src="xwing.png" style="display: none;">
-<canvas id="canvas" width="500" height="600">
-<script>
-  var interval
-  var ctx = document.getElementById("canvas").getContext("2d")
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+<title>Space Wars</title>
+<style>
+  * {
+    font-family: "Inter", sans-serif;
+  }
+  body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    margin: 0;
+    background-color: #000;
+    color: #fff;
+    font-family: Arial, sans-serif;
+  }
+  #title {
+    font-size: 2.5em;
+    margin-bottom: 20px;
+  }
+  #scoreboard {
+    font-size: 1.5em;
+    margin-bottom: 20px;
+  }
+  #canvas {
+    border: 2px solid #fff;
+    background-color: #111;
+  }
+  #introScreen, #gameOverScreen, #victoryScreen {
+    display: none;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.8);
+    color: white;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+  #introScreen button, #gameOverScreen button, #victoryScreen button {
+    margin-top: 20px;
+    padding: 10px 20px;
+    font-size: 1.2em;
+    cursor: pointer;
+  }
+</style>
+</head>
+<body>
+  <div id="title">Space Wars</div>
+  <div id="scoreboard">Pontuação: <span id="score">0</span></div>
+  <canvas id="canvas" width="500" height="600"></canvas>
+  <div id="introScreen">
+    <h2>Bem-vindo ao Space Wars!</h2>
+    <p>Comandos do Jogo:</p>
+    <ul>
+      <li>Setas Esquerda/Direita: Mover a nave</li>
+      <li>Barra de Espaço: Atirar</li>
+    </ul>
+    <p>Objetivo do Jogo:</p>
+    <p>Elimine todos os invasores antes que eles alcancem sua nave.</p>
+    <button onclick="startGame()">Iniciar Jogo</button>
+  </div>
+  <div id="gameOverScreen">
+    <div id="gameOverMessage">Fim de Jogo</div>
+    <button onclick="restartGame()">Reiniciar</button>
+  </div>
+  <div id="victoryScreen">
+    <div id="victoryMessage">Você Venceu!</div>
+    <button onclick="restartGame()">Reiniciar</button>
+  </div>
+  <img id="invader" src="imperio2.png" style="display: none;">
+  <img id="cannon" src="spaceship.png" style="display: none;">
+  <script>
+    var interval;
+    var ctx = document.getElementById("canvas").getContext("2d");
+    var score = 0;
+    var scoreElement = document.getElementById("score");
+    var introScreen = document.getElementById("introScreen");
+    var gameOverScreen = document.getElementById("gameOverScreen");
+    var gameOverMessage = document.getElementById("gameOverMessage");
+    var victoryScreen = document.getElementById("victoryScreen");
+    var victoryMessage = document.getElementById("victoryMessage");
+    var gameRunning = false;
 
-  function GameObject(x, y, img) {
-    this.x = x; this.y = y; this.img = img; this.active = true
-  }
-  GameObject.prototype.draw = function(ctx) {
-    this.active && ctx.drawImage(this.img, this.x, this.y, 40, 40)
-  }
-  GameObject.prototype.move = function(dx, dy) {
-    this.x += dx; this.y += dy
-  }
-  GameObject.prototype.fire = function(dy) {
-    return new Shot(this.x+20, this.y+20, dy)
-  }
-  GameObject.prototype.isHitBy = function(shot) {
-    function between(x, a, b) { return a < x && x < b}
-    return this.active && between(shot.x, this.x, this.x+40) && between(shot.y+10, this.y, this.y+20)
-  }
-  function Shot(x, y, dy) {
-    this.x = x; this.y = y; this.dy = dy;
-  }
-  Shot.prototype.move = function() {
-    this.y += this.dy
-    return this.y > 0 && this.y < 5000
-  }
-  Shot.prototype.draw = function(ctx) {
-    ctx.fillStyle = '#FF0000'
-    ctx.fillRect(this.x-1, this.y, 4, 20)
-  }
-  var invaderDx = -5
-  var invaders = []
-  var cannon = new GameObject(230, 550, document.getElementById("cannon"))
-  var invaderShot, cannonShot
+    function GameObject(x, y, img) {
+      this.x = x; this.y = y; this.img = img; this.active = true;
+    }
+    GameObject.prototype.draw = function(ctx) {
+      this.active && ctx.drawImage(this.img, this.x, this.y, 40, 40);
+    }
+    GameObject.prototype.move = function(dx, dy) {
+      this.x += dx; this.y += dy;
+    }
+    GameObject.prototype.fire = function(dy) {
+      return new Shot(this.x + 20, this.y + 20, dy);
+    }
+    GameObject.prototype.isHitBy = function(shot) {
+      function between(x, a, b) { return a < x && x < b; }
+      return this.active && between(shot.x, this.x, this.x + 40) && between(shot.y + 10, this.y, this.y + 20);
+    }
+    function Shot(x, y, dy) {
+      this.x = x; this.y = y; this.dy = dy;
+    }
+    Shot.prototype.move = function() {
+      this.y += this.dy;
+      return this.y > 0 && this.y < 600;
+    }
+    Shot.prototype.draw = function(ctx) {
+      ctx.fillStyle = '#FF0000';
+      ctx.fillRect(this.x - 1, this.y, 4, 20);
+    }
+    var invaderDx = -5;
+    var invaders = [];
+    var cannon = new GameObject(230, 550, document.getElementById("cannon"));
+    var invaderShot, cannonShot;
 
-  function init() {
-    var img = document.getElementById("invader")
-    for (var y = 0; y < 3; y++) {
-      for (var x = 0; x < 8; x++) {
-        invaders.push(new GameObject(50+x*50, 20+y*50, img))
+    function init() {
+      invaders = [];
+      var img = document.getElementById("invader");
+      for (var y = 0; y < 3; y++) {
+        for (var x = 0; x < 8; x++) {
+          invaders.push(new GameObject(50 + x * 50, 20 + y * 50, img));
+        }
+      }
+      cannon = new GameObject(230, 550, document.getElementById("cannon"));
+      invaderShot = null;
+      cannonShot = null;
+      score = 0;
+      scoreElement.textContent = score;
+      gameRunning = false;
+    }
+
+    function draw() {
+      ctx.fillStyle = '#111';
+      ctx.fillRect(0, 0, 500, 600);
+      invaders.forEach(inv => inv.draw(ctx));
+      cannon.draw(ctx);
+      invaderShot && invaderShot.draw(ctx);
+      cannonShot && cannonShot.draw(ctx);
+    }
+
+    function move() {
+      if (!gameRunning) return;
+      var leftX = invaders[0].x, rightX = invaders[invaders.length - 1].x;
+      if (leftX <= 20 || rightX >= 440) invaderDx = -invaderDx;
+      invaders.forEach(inv => inv.move(invaderDx, 0.5));
+      if (invaderShot && !invaderShot.move()) {
+        invaderShot = null;
+      }
+      if (!invaderShot) {
+        var active = invaders.filter(i => i.active);
+        if (active.length > 0) {
+          var r = active[Math.floor(Math.random() * active.length)];
+          invaderShot = r.fire(20);
+        }
+      }
+      if (cannonShot) {
+        var hit = invaders.find(inv => inv.isHitBy(cannonShot));
+        if (hit) {
+          hit.active = false;
+          score += 10; // Aumenta a pontuação em 10
+          scoreElement.textContent = score;
+          cannonShot = null;
+        } else {
+          if (!cannonShot.move()) cannonShot = null;
+        }
       }
     }
-  }
 
-  function draw() {
-    ctx.fillStyle = '#000'
-    ctx.fillRect(0, 0, 500, 600)
-    invaders.forEach(inv => inv.draw(ctx))
-    cannon.draw(ctx)
-    invaderShot && invaderShot.draw(ctx)
-    cannonShot && cannonShot.draw(ctx)
-  }
+    function isGameOver() {
+      return cannon.isHitBy(invaderShot) || invaders.find(inv => inv.active && inv.y > 530);
+    }
 
-  function move() {
-    var leftX = invaders[0].x, rightX = invaders[invaders.length-1].x
-    if (leftX <= 20 || rightX >= 440) invaderDx = -invaderDx
-    invaders.forEach(inv => inv.move(invaderDx, 0.5))
-    if (invaderShot && !invaderShot.move()) {
-      invaderShot = null
+    function isVictory() {
+      return invaders.every(inv => !inv.active);
     }
-    if (!invaderShot) {
-      var active = invaders.filter(i => i.active)
-      var r = active[Math.floor(Math.random()*active.length)]
-      invaderShot = r.fire(20)
-    }
-    if (cannonShot) {
-      var hit = invaders.find(inv => inv.isHitBy(cannonShot))
-      if (hit) {
-        hit.active = false
-        cannonShot = null
-      } else {
-        if (!cannonShot.move()) cannonShot = null
+
+    function game() {
+      if (!gameRunning) return;
+      move();
+      draw();
+      if (isGameOver()) {
+        clearInterval(interval);
+        showGameOverScreen();
+        gameRunning = false;
+      } else if (isVictory()) {
+        clearInterval(interval);
+        showVictoryScreen();
+        gameRunning = false;
       }
     }
-  }
 
-  function isGameOver() {
-    return cannon.isHitBy(invaderShot) || invaders.find(inv => inv.active && inv.y > 530)
-  }
-  function game() {
-    move()
-    draw()
-    if (isGameOver()) {
-      alert("Game over")
-      clearInterval(interval)
-      setTimeout(function() {
-            location.reload()
-        }, 1000)
+    function start() {
+      document.addEventListener("keydown", function(e) {
+        if (e.keyCode == 37 && cannon.x > 40) cannon.move(-20, 0);
+        if (e.keyCode == 39 && cannon.x < 420) cannon.move(20, 0);
+        if (e.keyCode == 32 && !cannonShot && gameRunning) cannonShot = cannon.fire(-30);
+      });
+      interval = setInterval(game, 50);
     }
-  }
 
-  function start() {
-    init()
-    document.addEventListener("keydown", function(e) {
-      if (e.keyCode == 37 && cannon.x > 40) cannon.move(-20, 0)
-      if (e.keyCode == 39 && cannon.x < 420) cannon.move(20, 0)
-      if (e.keyCode == 32 && !cannonShot) cannonShot = cannon.fire(-30)
-    })
-    interval = setInterval(game, 50)
-  }
+    function showGameOverScreen() {
+      gameOverMessage.innerHTML = `Fim de Jogo<br>Sua pontuação: ${score}`;
+      gameOverScreen.style.display = "flex";
+    }
 
-  window.onload = start
-</script>
+    function showVictoryScreen() {
+      victoryMessage.innerHTML = `Você Venceu!<br>Sua pontuação: ${score}`;
+      victoryScreen.style.display = "flex";
+    }
+
+    function startGame() {
+      introScreen.style.display = "none";
+      gameOverScreen.style.display = "none";
+      victoryScreen.style.display = "none";
+      init();
+      gameRunning = true;
+      start();
+    }
+
+    function restartGame() {
+      introScreen.style.display = "none";
+      gameOverScreen.style.display = "none";
+      victoryScreen.style.display = "none";
+      init();
+      gameRunning = true;
+      start();
+    }
+
+    window.onload = function() {
+      introScreen.style.display = "flex";
+      gameOverScreen.style.display = "none";
+      victoryScreen.style.display = "none";
+      gameRunning = false;
+    }
+  </script>
+</body>
+</html>
