@@ -34,7 +34,7 @@
     border: 2px solid #fff;
     background-color: #111;
   }
-  #introScreen, #gameOverScreen, #victoryScreen {
+  #introScreen, #gameOverScreen, #victoryScreen, #pauseScreen {
     display: none;
     position: absolute;
     top: 0;
@@ -48,10 +48,18 @@
     align-items: center;
     justify-content: center;
   }
-  #introScreen button, #gameOverScreen button, #victoryScreen button {
+  #introScreen button, #gameOverScreen button, #victoryScreen button, #pauseScreen button {
     margin-top: 20px;
     padding: 10px 20px;
     font-size: 1.2em;
+    cursor: pointer;
+  }
+  #pauseButton {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    padding: 10px 20px;
+    font-size: 1em;
     cursor: pointer;
   }
 </style>
@@ -60,6 +68,7 @@
   <div id="title">Space Wars</div>
   <div id="scoreboard">Pontuação: <span id="score">0</span></div>
   <canvas id="canvas" width="500" height="600"></canvas>
+  <button id="pauseButton" onclick="togglePause()">Pausar</button>
   <div id="introScreen">
     <h2>Bem-vindo ao Space Wars!</h2>
     <p>Comandos do Jogo:</p>
@@ -79,6 +88,10 @@
     <div id="victoryMessage">Você Venceu!</div>
     <button onclick="restartGame()">Reiniciar</button>
   </div>
+  <div id="pauseScreen">
+    <div>Pausado</div>
+    <button onclick="togglePause()">Continuar</button>
+  </div>
   <img id="invader" src="imperio2.png" style="display: none;">
   <img id="cannon" src="spaceship.png" style="display: none;">
   <script>
@@ -91,7 +104,13 @@
     var gameOverMessage = document.getElementById("gameOverMessage");
     var victoryScreen = document.getElementById("victoryScreen");
     var victoryMessage = document.getElementById("victoryMessage");
+    var pauseScreen = document.getElementById("pauseScreen");
+    var pauseButton = document.getElementById("pauseButton");
     var gameRunning = false;
+    var gamePaused = false;
+
+    var leftPressed = false;
+    var rightPressed = false;
 
     function GameObject(x, y, img) {
       this.x = x; this.y = y; this.img = img; this.active = true;
@@ -106,8 +125,13 @@
       return new Shot(this.x + 20, this.y + 20, dy);
     }
     GameObject.prototype.isHitBy = function(shot) {
-      function between(x, a, b) { return a < x && x < b; }
-      return this.active && between(shot.x, this.x, this.x + 40) && between(shot.y + 10, this.y, this.y + 20);
+      if (!this.active) return false;
+      return (
+        shot.x >= this.x &&
+        shot.x <= this.x + 40 &&
+        shot.y >= this.y &&
+        shot.y <= this.y + 40
+      );
     }
     function Shot(x, y, dy) {
       this.x = x; this.y = y; this.dy = dy;
@@ -122,7 +146,7 @@
     }
     var invaderDx = -5;
     var invaders = [];
-    var cannon = new GameObject(230, 550, document.getElementById("cannon"));
+    var cannon = new GameObject(230, 550, document.getElementById("cannon")); 
     var invaderShot, cannonShot;
 
     function init() {
@@ -139,6 +163,8 @@
       score = 0;
       scoreElement.textContent = score;
       gameRunning = false;
+      gamePaused = false;
+      pauseButton.textContent = "Pausar";
     }
 
     function draw() {
@@ -151,10 +177,10 @@
     }
 
     function move() {
-      if (!gameRunning) return;
+      if (!gameRunning || gamePaused) return;
       var leftX = invaders[0].x, rightX = invaders[invaders.length - 1].x;
       if (leftX <= 20 || rightX >= 440) invaderDx = -invaderDx;
-      invaders.forEach(inv => inv.move(invaderDx, 0.5));
+      invaders.forEach(inv => inv.move(invaderDx, 0.4)); //aq caso queira mudar a velocidade do inimigo
       if (invaderShot && !invaderShot.move()) {
         invaderShot = null;
       }
@@ -162,19 +188,27 @@
         var active = invaders.filter(i => i.active);
         if (active.length > 0) {
           var r = active[Math.floor(Math.random() * active.length)];
-          invaderShot = r.fire(20);
+          invaderShot = r.fire(22); //aqui caso queira mudar a velocidade do tiro
         }
       }
       if (cannonShot) {
         var hit = invaders.find(inv => inv.isHitBy(cannonShot));
         if (hit) {
           hit.active = false;
-          score += 10; // Aumenta a pontuação em 10
+          score += 10; // Mudar caso queira modificar o sistema de pontuação.
           scoreElement.textContent = score;
           cannonShot = null;
         } else {
           if (!cannonShot.move()) cannonShot = null;
         }
+      }
+
+      // Seção de ajuste de movimento do personagem, não recomendo mudar, me deu MUITO trabalho
+      if (leftPressed && cannon.x > 0) {
+        cannon.move(-5, 0);
+      }
+      if (rightPressed && cannon.x < 460) {
+        cannon.move(5, 0);
       }
     }
 
@@ -187,7 +221,7 @@
     }
 
     function game() {
-      if (!gameRunning) return;
+      if (!gameRunning || gamePaused) return;
       move();
       draw();
       if (isGameOver()) {
@@ -203,11 +237,40 @@
 
     function start() {
       document.addEventListener("keydown", function(e) {
-        if (e.keyCode == 37 && cannon.x > 40) cannon.move(-20, 0);
-        if (e.keyCode == 39 && cannon.x < 420) cannon.move(20, 0);
-        if (e.keyCode == 32 && !cannonShot && gameRunning) cannonShot = cannon.fire(-30);
+        if (e.keyCode == 37) {
+          leftPressed = true;
+        }
+        if (e.keyCode == 39) {
+          rightPressed = true;
+        }
+        if (e.keyCode == 32 && !cannonShot && gameRunning) {
+          cannonShot = cannon.fire(-30);
+        }
       });
+
+      document.addEventListener("keyup", function(e) {
+        if (e.keyCode == 37) {
+          leftPressed = false;
+        }
+        if (e.keyCode == 39) {
+          rightPressed = false;
+        }
+      });
+
       interval = setInterval(game, 50);
+    }
+
+    function togglePause() {
+      if (gameRunning) {
+        gamePaused = !gamePaused;
+        if (gamePaused) {
+          pauseButton.textContent = "Continuar";
+          pauseScreen.style.display = "flex";
+        } else {
+          pauseButton.textContent = "Pausar";
+          pauseScreen.style.display = "none";
+        }
+      }
     }
 
     function showGameOverScreen() {
@@ -224,6 +287,7 @@
       introScreen.style.display = "none";
       gameOverScreen.style.display = "none";
       victoryScreen.style.display = "none";
+      pauseScreen.style.display = "none";
       init();
       gameRunning = true;
       start();
@@ -233,6 +297,7 @@
       introScreen.style.display = "none";
       gameOverScreen.style.display = "none";
       victoryScreen.style.display = "none";
+      pauseScreen.style.display = "none";
       init();
       gameRunning = true;
       start();
@@ -242,6 +307,7 @@
       introScreen.style.display = "flex";
       gameOverScreen.style.display = "none";
       victoryScreen.style.display = "none";
+      pauseScreen.style.display = "none";
       gameRunning = false;
     }
   </script>
